@@ -125,7 +125,6 @@ def generate_graph_with_llm(topic: str) -> GraphData:
         return GraphData(nodes, links)
     
     except Exception as e:
-        print(f"Error generating graph with LLM: {e}")
         # Return a fallback simple graph
         return generate_fallback_graph(topic)
 
@@ -157,9 +156,15 @@ def api_generate_graph():
     data = request.json
     topic = data.get('topic', 'Generic Process')
     
-    graph_data = generate_graph_with_llm(topic)
+    try:
+        graph_data = generate_graph_with_llm(topic)
+        return jsonify(graph_data.to_dict())
+    except Exception as e:
+        print(f"Error generating graph with LLM: {e}")
+        # graph_data = generate_fallback_graph(topic)
+        # return jsonify(graph_data.to_dict())
+        return jsonify({"error": "failed to generate graph"})
     
-    return jsonify(graph_data.to_dict())
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
