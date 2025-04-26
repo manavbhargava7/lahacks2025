@@ -10,7 +10,7 @@ CORS(app)  # Enable CORS for all routes
 
 # Configure Gemini API - in a production environment, use proper env variables
 # Replace with your actual API key
-genai.configure(api_key=os.environ.get("AIzaSyDhir02NpWjE4LcokbTwYjV8w2XsvxCK4s"))
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 @app.route('/api/dag/generate', methods=['POST'])
 def generate_dag():
@@ -24,7 +24,7 @@ def generate_dag():
         # TODO: This isn't working properly. it throws an error for some reason.
         #i believe this has to do with our call of the .Content() function, as it does not yet exist.
         # i switched back to using backend.py 2 
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         response = model.generate_content([
             genai.types.Content(
                 parts=[genai.types.Part(text="You are a DAG generation assistant that outputs valid JSON. Create a directed acyclic graph (DAG) for execution dependencies based on the following prompt. The output should be a JSON object with 'nodes' and 'edges' arrays in a format compatible with React Flow. Each node should have an 'id', 'data' object with 'label' and 'status' properties, and a 'type' field set to 'taskNode'. Each edge should have an 'id', 'source', 'target', 'animated', and 'style' properties.")]

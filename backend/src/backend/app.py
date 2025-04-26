@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from .dummy_word_graph import word_graph_bp
+from .word_graph import word_graph_bp
 
 app = Flask(__name__)
 CORS(app)

@@ -88,7 +88,7 @@ def generate_graph_with_llm(topic: str) -> GraphData:
     
     try:
         # Initialize the model
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Generate content
         response = model.generate_content(prompt)
@@ -125,6 +125,7 @@ def generate_graph_with_llm(topic: str) -> GraphData:
         return GraphData(nodes, links)
     
     except Exception as e:
+        print(f"Error generating graph with LLM: {e}")
         # Return a fallback simple graph
         return generate_fallback_graph(topic)
 

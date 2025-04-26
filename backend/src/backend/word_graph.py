@@ -5,10 +5,23 @@ from typing import List, Dict
 import random
 import json
 import re
+from dotenv import load_dotenv
+from pathlib import Path
 
-# Initialize Gemini
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-pro')
+# Initialize Gemini - the Gemini SDK uses GOOGLE_API_KEY
+api_key = os.getenv('GOOGLE_API_KEY')
+if not api_key:
+    print("WARNING: GOOGLE_API_KEY environment variable not found.")
+    # Also check for GEMINI_API_KEY for backward compatibility
+    api_key = os.getenv('GEMINI_API_KEY')
+    if api_key:
+        print("Using GEMINI_API_KEY instead.")
+        os.environ['GOOGLE_API_KEY'] = api_key
+    else:
+        print("WARNING: Neither GOOGLE_API_KEY nor GEMINI_API_KEY found.")
+
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 word_graph_bp = Blueprint('word_graph', __name__)
 
@@ -18,6 +31,15 @@ def generate_word_graph():
         data = request.get_json()
         topic = data.get('topic', 'Technology')
         num_words = data.get('num_words', 5)
+
+        # Check if API key is available
+        api_key = os.getenv('GOOGLE_API_KEY')
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable not set")
+
+        # Print API key first few characters for debugging
+        if api_key:
+            print(f"Using API key starting with: {api_key[:4]}...")
 
         # Generate words related to the topic
         prompt = f"""Generate {num_words} key concepts or terms related to {topic}.
@@ -41,9 +63,13 @@ def generate_word_graph():
         }}"""
 
         # Generate content using Gemini
-        response = model.generate_content(prompt)
-        if not response.text:
-            raise ValueError("Empty response from Gemini")
+        try:
+            response = model.generate_content(prompt)
+            if not response.text:
+                raise ValueError("Empty response from Gemini")
+        except Exception as e:
+            print(f"Gemini API error: {str(e)}")
+            raise ValueError(f"Error calling Gemini API: {str(e)}")
 
         # Parse the response and extract JSON
         try:
@@ -52,13 +78,18 @@ def generate_word_graph():
             if not json_match:
                 raise ValueError("Could not find JSON in response")
             
-            words_data = json.loads(json_match.group())
+            json_string = json_match.group()
+            print(f"Extracted JSON: {json_string[:100]}...")  # Print first 100 chars for debugging
+            
+            words_data = json.loads(json_string)
             if not isinstance(words_data, dict) or 'words' not in words_data:
                 raise ValueError("Invalid JSON structure")
         except json.JSONDecodeError as e:
+            print(f"JSON parse error: {str(e)}, Content: {response.text[:200]}")
             raise ValueError(f"Failed to parse JSON: {str(e)}")
 
         words = words_data['words']
+        print(f"Successfully parsed {len(words)} words")
         
         # Create a dictionary to map terms to their indices
         term_to_index = {word['term'].lower(): i for i, word in enumerate(words)}
